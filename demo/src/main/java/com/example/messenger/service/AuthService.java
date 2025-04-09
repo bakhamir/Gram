@@ -2,6 +2,7 @@ package com.example.messenger.service;
 
 import com.example.messenger.domain.User;
 import com.example.messenger.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -10,20 +11,26 @@ import java.util.Optional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository) {
+    // Внедрение зависимостей
+    public AuthService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
+    // Регистрация пользователя с хешированием пароля
     public User register(String phoneNumber, String password) {
         User user = new User();
         user.setPhoneNumber(phoneNumber);
-        user.setPassword(password);  // Лучше использовать хеширование пароля
+        // Хешируем пароль перед сохранением в базе данных
+        user.setPassword(passwordEncoder.encode(password));
         return userRepository.save(user);
     }
 
+    // Логин с проверкой пароля (сравниваем хешированный пароль)
     public Optional<User> login(String phoneNumber, String password) {
         return userRepository.findByPhoneNumber(phoneNumber)
-                .filter(user -> user.getPassword().equals(password));  // Лучше хешировать пароль
+                .filter(user -> passwordEncoder.matches(password, user.getPassword()));  // Проверка пароля с хешем
     }
 }
