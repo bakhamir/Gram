@@ -3,7 +3,6 @@ package com.example.messenger.controller;
 import com.example.messenger.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -15,16 +14,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestParam String phoneNumber, @RequestParam String password) {
-        authService.register(phoneNumber, password);
-        return ResponseEntity.ok("Registration successful");
+    public ResponseEntity<AuthResponse> register(@RequestParam String phoneNumber, @RequestParam String password) {
+        String token = authService.register(phoneNumber, password);
+        return ResponseEntity.ok(new AuthResponse(token));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String phoneNumber, @RequestParam String password) {
-        if (authService.login(phoneNumber, password).isPresent()) {
-            return ResponseEntity.ok("Login successful");
-        }
-        return ResponseEntity.status(401).body("Invalid credentials");
+    public ResponseEntity<?> login(@RequestParam String phoneNumber, @RequestParam String password) {
+        return authService.login(phoneNumber, password)
+                .map(token -> ResponseEntity.ok(new AuthResponse(token)))
+                .orElseGet(() -> ResponseEntity.status(401).body("Invalid credentials"));
     }
 }
+
